@@ -1,0 +1,93 @@
+/* src/components/studentNavbar.css */
+
+.student-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background-color: rgb(233, 136, 17);
+  color: white;
+  padding: 0 10px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  font-family: Arial, sans-serif;
+}
+
+/* Left */
+.navbar-left .logo {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Center */
+.navbar-center {
+  display: flex;
+  gap: 30px;
+}
+
+.navbar-center a {
+  text-decoration: none;
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.navbar-center a:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.navbar-center .active {
+  border-bottom: 2px solid #ffffff;
+  font-weight: 600;
+}
+
+/* Right */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.student-name {
+  font-weight: 500;
+}
+
+.logout-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 4px;
+  background-color: #dc2626;
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+  margin: 0;
+}
+
+.logout-btn:hover {
+  background-color: #b91c1c;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .student-navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 20px;
+    gap: 10px;
+  }
+
+  .navbar-center {
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .navbar-right {
+    gap: 10px;
+  }
+}

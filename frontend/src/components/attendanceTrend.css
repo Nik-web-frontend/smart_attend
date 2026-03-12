@@ -1,0 +1,51 @@
+.trend-section {
+  margin-top: 50px;
+  padding: 25px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.trend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.trend-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #065f46;
+}
+
+.trend-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.subject-select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.subject-select:focus {
+  outline: none;
+  border-color: #16a34a;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .trend-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .subject-select {
+    width: 100%;
+  }
+}
