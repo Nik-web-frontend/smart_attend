@@ -32,7 +32,7 @@ const GenerateQR = () => {
       const token = localStorage.getItem("token");
 
       const response = await axios.post(
-        "http://localhost:5000/api/teacher/generate-qr",
+        `${process.env.REACT_APP_API_URL}/api/teacher/generate-qr`,
         formData,
         {
           headers: {

@@ -23,7 +23,7 @@ const StudentDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "http://localhost:5000/api/student/attendance-stats",
+        `${process.env.REACT_APP_API_URL}/api/student/attendance-stats`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

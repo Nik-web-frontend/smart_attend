@@ -14,7 +14,7 @@ const StudentAttendance = () => {
     const fetchAttendance = async () => {
         try {
             const res = await axios.get(
-                "http://localhost:5000/api/student/attendance-history",
+                `${process.env.REACT_APP_API_URL}/api/student/attendance-history`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
