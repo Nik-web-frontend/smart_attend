@@ -10,6 +10,7 @@ import ViewAttendance from "./pages/ViewAttendance";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import StudentAttendance from "./pages/StudentAttendance";
 import Profile from "./pages/Profile";
+import UploadAutoQr from "./pages/UploadAutoQr";
 
 function App() {
   return (
@@ -55,6 +56,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["teacher"]}>
               <GenerateQR />
+            </ProtectedRoute>
+          }
+        />
+
+         <Route
+          path="/upload-file-autoqr"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <UploadAutoQr />
             </ProtectedRoute>
           }
         />

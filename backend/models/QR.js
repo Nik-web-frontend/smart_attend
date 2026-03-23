@@ -5,7 +5,6 @@ const qrSchema = new mongoose.Schema({
   subject: { type: String, required: true },
   className: {
     type: String,
-    enum: ["7A", "7B", "8A", "8B", "9A", "9B"],
     required: true,
   },
   qrData: { type: String, required: true },

@@ -73,14 +73,14 @@ const FacultyDashboard = () => {
                         <div className="section-col middle-col">
                             <button
                                 className="action-btn"
-                                onClick={() => window.location.href = "/teacher/create-subject"}
+                                onClick={() => window.location.href = "/generate-qr"}
                             >
                                 Create Class
                             </button>
 
                             <button
                                 className="action-btn"
-                                onClick={() => window.location.href = "/generate-qr"}
+                                onClick={() => window.location.href = "#"}
                             >
                                 Start Attendance
                             </button>

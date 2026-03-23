@@ -70,3 +70,100 @@ exports.getMyAttendance = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// Time table upload 
+
+const xlsx = require("xlsx");
+const Timetable = require("../models/Timetable");
+
+exports.uploadTimetable = async (req, res) => {
+  try {
+    const workbook = xlsx.readFile(req.file.path);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    function excelTimeToString(time) {
+      if (typeof time === "number") {
+        const totalMinutes = Math.round(time * 24 * 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+      }
+      return time;
+    }
+
+    // clear old data
+    await Timetable.deleteMany({});
+
+    for (let row of data) {
+      if (!row.Day || !row.StartTime || !row.EndTime || !row.Subject || !row.Class) {
+        continue;
+      }
+
+      await Timetable.create({
+        day: row.Day,
+        startTime: excelTimeToString(row.StartTime),
+        endTime: excelTimeToString(row.EndTime),
+        subject: row.Subject,
+        class: row.Class,
+      });
+    }
+
+    res.json({ message: "Timetable uploaded successfully" });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Auto QR 
+
+exports.getAutoQR = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const day = now.toLocaleString("en-US", { weekday: "long" });
+    const currentTime = now.toTimeString().slice(0, 5);
+
+    const lecture = await Timetable.findOne({
+      day: day,
+      startTime: { $lte: currentTime },
+      endTime: { $gte: currentTime },
+    });
+
+    if (!lecture) {
+      return res.json({ message: "No lecture right now" });
+    }
+
+    const qrPayload = {
+      subject: lecture.subject,
+      className: lecture.class,
+      time: Date.now(),
+    };
+
+    const qrString = JSON.stringify(qrPayload);
+
+    const qrImage = await QRCode.toDataURL(qrString);
+
+    const expiresAt = new Date(Date.now() + 20 * 1000);
+
+    await QR.create({
+      teacher: req.user.id,
+      subject: lecture.subject,
+      className: lecture.class,
+      qrData: qrString,
+      expiresAt,
+    });
+
+    res.json({
+      subject: lecture.subject,
+      class: lecture.class,
+      qrImage,
+      expiresAt,
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

@@ -30,8 +30,8 @@ const FacultyNavbar = () => {
         </Link>
 
         <Link
-          to="/generate-qr"
-          className={location.pathname === "/generate-qr" ? "active" : ""}
+          to="/upload-file-autoqr"
+          className={location.pathname === "/upload-file-autoqr" ? "active" : ""}
         >
           Classes
         </Link>

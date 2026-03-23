@@ -6,6 +6,8 @@ const User = require("../models/User");
 exports.protect = async (req, res, next) => {
   let token;
 
+
+
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer ")
@@ -35,6 +37,8 @@ exports.protect = async (req, res, next) => {
 
 exports.authorize = (...roles) => {
   return (req, res, next) => {
+    console.log("USER ROLE:", req.user.role);
+    console.log("ALLOWED ROLES:", roles);
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({
         message: "User role not authorized to access this route",
