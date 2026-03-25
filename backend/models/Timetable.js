@@ -20,6 +20,9 @@ const timetableSchema = new mongoose.Schema({
   class: {
     type: String,
     required: true
+  },
+  fileName: {
+    type: String
   }
 });
 

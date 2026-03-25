@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const QR = require("../models/QR");
 const Attendance = require("../models/Attendance");
 
+
 // ======================
 // Generate QR
 // ======================
@@ -72,12 +73,17 @@ exports.getMyAttendance = async (req, res) => {
 };
 
 // Time table upload 
-
 const xlsx = require("xlsx");
+const fs = require("fs");
 const Timetable = require("../models/Timetable");
 
 exports.uploadTimetable = async (req, res) => {
   try {
+    // ❌ No file uploaded
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
     const workbook = xlsx.readFile(req.file.path);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = xlsx.utils.sheet_to_json(sheet);
@@ -93,11 +99,14 @@ exports.uploadTimetable = async (req, res) => {
       return time;
     }
 
-    // clear old data
+    // 🔥 clear old timetable (overwrite)
     await Timetable.deleteMany({});
+
+    let insertedCount = 0;
 
     for (let row of data) {
       if (!row.Day || !row.StartTime || !row.EndTime || !row.Subject || !row.Class) {
+        console.log("Skipping invalid row:", row);
         continue;
       }
 
@@ -107,15 +116,54 @@ exports.uploadTimetable = async (req, res) => {
         endTime: excelTimeToString(row.EndTime),
         subject: row.Subject,
         class: row.Class,
+        fileName: req.file.originalname,
       });
+
+      insertedCount++;
     }
 
-    res.json({ message: "Timetable uploaded successfully" });
+    // 🔥 delete uploaded file (important)
+    fs.unlinkSync(req.file.path);
+
+    res.json({
+      message: "Timetable uploaded successfully",
+      count: insertedCount,
+      fileName: req.file.originalname,
+    });
 
   } catch (error) {
+    console.error(error);
+
+    // cleanup if error
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
     res.status(500).json({ error: error.message });
   }
 };
+
+// GET /api/teacher/timetable-file
+exports.getTimetableFile = async (req, res) => {
+  const record = await Timetable.findOne();
+
+  if (!record) {
+    return res.json({ fileName: null });
+  }
+
+  res.json({ fileName: record.fileName });
+};
+
+// DELETE timetable
+exports.deleteTimetable = async (req, res) => {
+  try {
+    await Timetable.deleteMany({});
+    res.json({ message: "Timetable cleared" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 
 // Auto QR 
 
@@ -126,16 +174,50 @@ exports.getAutoQR = async (req, res) => {
     const day = now.toLocaleString("en-US", { weekday: "long" });
     const currentTime = now.toTimeString().slice(0, 5);
 
+    // 1. Find current lecture
     const lecture = await Timetable.findOne({
       day: day,
       startTime: { $lte: currentTime },
       endTime: { $gte: currentTime },
     });
 
+    // 2. Find next lecture (ALWAYS)
+    const nextLecture = await Timetable.findOne({
+      day: day,
+      startTime: { $gt: currentTime },
+    }).sort({ startTime: 1 });
+
+    // 3. No current lecture
     if (!lecture) {
-      return res.json({ message: "No lecture right now" });
+      return res.json({
+        message: "No lecture right now",
+        nextLecture,
+      });
     }
 
+    // 4. Calculate lecture start time
+    const [hours, minutes] = lecture.startTime.split(":").map(Number);
+
+    const lectureStart = new Date();
+    lectureStart.setHours(hours, minutes, 0, 0);
+
+    // 5. Fixed expiry (2 min from lecture start)
+    const expiresAt = new Date(lectureStart.getTime() + 2 * 60 * 1000);
+
+    // 6. If expired
+    if (new Date() > expiresAt) {
+      return res.json({
+        message: "QR expired",
+        subject: lecture.subject,
+        class: lecture.class,
+        nextLecture,
+      });
+    }
+
+    // 7. Cleanup old QRs
+    await QR.deleteMany({ expiresAt: { $lt: new Date() } });
+
+    // 8. Generate NEW QR every time
     const qrPayload = {
       subject: lecture.subject,
       className: lecture.class,
@@ -143,11 +225,9 @@ exports.getAutoQR = async (req, res) => {
     };
 
     const qrString = JSON.stringify(qrPayload);
-
     const qrImage = await QRCode.toDataURL(qrString);
 
-    const expiresAt = new Date(Date.now() + 20 * 1000);
-
+    // 9. Save QR
     await QR.create({
       teacher: req.user.id,
       subject: lecture.subject,
@@ -156,11 +236,13 @@ exports.getAutoQR = async (req, res) => {
       expiresAt,
     });
 
+    // 10. Response
     res.json({
       subject: lecture.subject,
       class: lecture.class,
       qrImage,
       expiresAt,
+      nextLecture,
     });
 
   } catch (err) {
