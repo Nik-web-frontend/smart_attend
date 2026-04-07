@@ -37,18 +37,18 @@ const FacultyNavbar = () => {
         </Link>
 
         <Link
-          to="/teacher/my-attendance"
+          to="/attendance"
           className={
-            location.pathname === "/teacher/my-attendance" ? "active" : ""
+            location.pathname === "/attendance" ? "active" : ""
           }
         >
           Attendance
         </Link>
 
         <Link
-          to="/teacher/manual-attendance"
+          to="/upload-attendance"
           className={
-            location.pathname === "/teacher/manual-attendance" ? "active" : ""
+            location.pathname === "/upload-attendance" ? "active" : ""
           }
         >
           Manual Attendance
@@ -57,7 +57,7 @@ const FacultyNavbar = () => {
 
       {/* Right */}
       <div className="navbar-right">
-        <span className="faculty-name">Profile</span>
+        
         <button className="logout-btn" onClick={handleLogout}>
           Logout
         </button>

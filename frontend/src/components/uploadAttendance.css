@@ -1,0 +1,63 @@
+.upload-attendance-container {
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 25px 20px;
+  border-radius: 12px;
+  background: #f9fafe;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.upload-attendance-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 25px;
+}
+
+.upload-attendance-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.input-field {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.input-field:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.4);
+}
+
+.input-file {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: #fff;
+}
+
+.upload-button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #4caf50;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.upload-button:hover {
+  background: #45a049;
+  transform: translateY(-2px);
+}
+
+.upload-button:active {
+  transform: translateY(1px);
+}

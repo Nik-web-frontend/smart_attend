@@ -45,12 +45,7 @@ const StudentNavbar = () => {
           Attendance
         </Link>
 
-        <Link
-          to="/student/profile"
-          className={location.pathname === "/student/profile" ? "active" : ""}
-        >
-          Profile
-        </Link>
+      
       </div>
 
       {/* Right */}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "./autoQR.css";
 
 export default function AutoQR({ refreshQR }) {
   const [qr, setQr] = useState(null);
@@ -20,7 +21,6 @@ export default function AutoQR({ refreshQR }) {
       const data = await res.json();
       setQr(data);
 
-      // ✅ handle expiry time
       if (data.expiresAt) {
         const diff = Math.floor(
           (new Date(data.expiresAt) - new Date()) / 1000
@@ -28,7 +28,6 @@ export default function AutoQR({ refreshQR }) {
         setTimeLeft(diff > 0 ? diff : 0);
       }
 
-      // ✅ handle expired case
       if (data.message === "QR expired") {
         setTimeLeft(0);
       }
@@ -38,16 +37,14 @@ export default function AutoQR({ refreshQR }) {
     }
   };
 
-  // Fetch every 10 sec
   useEffect(() => {
     fetchQR();
     const interval = setInterval(fetchQR, 10000);
     return () => clearInterval(interval);
   }, [refreshQR]);
 
-  // ⏳ Countdown (STOP when 0)
   useEffect(() => {
-    if (timeLeft <= 0) return; // stop timer when expired
+    if (timeLeft <= 0) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
@@ -57,43 +54,41 @@ export default function AutoQR({ refreshQR }) {
   }, [timeLeft]);
 
   return (
-    <div>
-      <h2>Live QR</h2>
+    <div className="autoqr-container">
+      <h2 className="autoqr-title">Live QR</h2>
 
-      {/* 1. Expired */}
+      {/* Expired */}
       {qr?.message === "QR expired" ? (
-        <p style={{ color: "red" }}>
-          QR Expired for {qr.subject}
+        <p className="qr-expired">
+          QR Expired for <strong>{qr.subject}</strong>
         </p>
 
       ) : qr?.qrImage ? (
 
-        /* 2. Active */
-        <div>
-          <img src={qr.qrImage} alt="QR Code" />
+        /* Active */
+        <div className="qr-active">
+          <img src={qr.qrImage} alt="QR Code" className="qr-image" />
 
-          <h3>Subject: {qr.subject}</h3>
-          <h3>Class: {qr.class}</h3>
-
-          <p>Expires in: {timeLeft}s</p>
+          <div className="qr-info">
+            <h3>Subject: {qr.subject}</h3>
+            <h3>Class: {qr.class}</h3>
+            <p className="qr-timer">Expires in: {timeLeft}s</p>
+          </div>
         </div>
 
       ) : (
 
-        /* 3. No lecture */
-        <p>No lecture right now</p>
+        /* No lecture */
+        <p className="qr-no-lecture">No lecture right now</p>
       )}
 
-      {/* Upcoming lecture ALWAYS */}
+      {/* Upcoming lecture */}
       {qr?.nextLecture && (
-        <div style={{ marginTop: "20px" }}>
+        <div className="upcoming-lecture">
           <h3>Upcoming Lecture</h3>
-          <p>Subject: {qr.nextLecture.subject}</p>
-          <p>Class: {qr.nextLecture.class}</p>
-          <p>
-            Time: {qr.nextLecture.startTime} -{" "}
-            {qr.nextLecture.endTime}
-          </p>
+          <p><strong>Subject:</strong> {qr.nextLecture.subject}</p>
+          <p><strong>Class:</strong> {qr.nextLecture.class}</p>
+          <p><strong>Time:</strong> {qr.nextLecture.startTime} - {qr.nextLecture.endTime}</p>
         </div>
       )}
     </div>

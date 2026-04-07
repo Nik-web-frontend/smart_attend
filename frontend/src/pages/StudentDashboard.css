@@ -62,7 +62,8 @@
 }
 
 .recent-session-table th {
-    background-color: #4caf50;
+    /* background-color: #4caf50; */
+    background-color: rgb(237, 177, 27);
     color: white;
     font-weight: 600;
 }

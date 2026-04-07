@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FacultyNavbar from "../components/FacultyNavbar";
 import axios from "axios";
 import "./GenerateQR.css";
@@ -11,9 +11,12 @@ const GenerateQR = () => {
     expiryMinutes: "",
   });
 
-  const [qrImage, setQrImage] = useState("");
+  const [qr, setQr] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  const token = localStorage.getItem("token");
 
   const handleChange = (e) => {
     setFormData({
@@ -25,24 +28,21 @@ const GenerateQR = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
-    setQrImage("");
+    setQr(null);
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-
-      const response = await axios.post(
+      await axios.post(
         `${process.env.REACT_APP_API_URL}/api/teacher/generate-qr`,
         formData,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      setQrImage(response.data.qr);
-      setMessage("QR Code generated successfully!");
+      setMessage("QR session started");
+      fetchQR();
+
     } catch (error) {
       setMessage(error.response?.data?.message || "Error generating QR");
     }
@@ -50,28 +50,68 @@ const GenerateQR = () => {
     setLoading(false);
   };
 
+  const fetchQR = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/teacher/manual-qr`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setQr(res.data);
+
+      if (res.data.expiresAt) {
+        const diff = Math.floor((new Date(res.data.expiresAt) - new Date()) / 1000);
+        setTimeLeft(diff > 0 ? diff : 0);
+      }
+
+      if (res.data.message === "QR expired") setTimeLeft(0);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (!qr) return;
+    const interval = setInterval(fetchQR, 10000);
+    return () => clearInterval(interval);
+  }, [qr]);
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const timer = setInterval(() => setTimeLeft(prev => (prev > 0 ? prev - 1 : 0)), 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
   return (
     <>
       <FacultyNavbar />
+
       <div className="qr-page">
         {/* LEFT SIDE - FORM */}
         <div className="qr-form-card">
           <h2>Generate Attendance QR</h2>
 
           <form onSubmit={handleSubmit}>
+            {/* 🔹 Subject Dropdown */}
             <div className="form-group">
               <label>Subject</label>
-              <input
-                type="text"
+              <select
                 name="subject"
                 value={formData.subject}
                 onChange={handleChange}
                 required
-              />
+              >
+                <option value="">Select Subject</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Gujarati">Gujarati</option>
+                <option value="Maths">Maths</option>
+                <option value="Science">Science</option>
+                <option value="English">English</option>
+              </select>
             </div>
 
-            
-
+            {/* 🔹 Class Dropdown */}
             <div className="form-group">
               <label>Class</label>
               <select
@@ -86,7 +126,6 @@ const GenerateQR = () => {
                 <option value="8A">8A</option>
                 <option value="8B">8B</option>
                 <option value="9A">9A</option>
-                <option value="9B">9B</option>
               </select>
             </div>
 
@@ -104,30 +143,32 @@ const GenerateQR = () => {
             </div>
 
             <button type="submit" disabled={loading}>
-              {loading ? "Generating..." : "Generate QR"}
+              {loading ? "Starting..." : "Generate QR"}
             </button>
           </form>
         </div>
 
         {/* RIGHT SIDE - RESULT */}
         <div className="qr-result-card">
-          {!qrImage && <p className="placeholder">QR will appear here</p>}
+          {!qr && <p className="placeholder">QR will appear here</p>}
 
-          {qrImage && (
+          {qr?.qrImage && (
             <>
-              <h3 className="success">QR Generated Successfully</h3>
-
+              <h3 className="success">QR Active</h3>
               <div className="session-info">
-                <p><strong>Subject:</strong> {formData.subject}</p>
-                <p><strong>Class:</strong> {formData.className}</p>
-                <p><strong>Expires In:</strong> {formData.expiryMinutes} min</p>
+                <p><strong>Subject:</strong> {qr.subject}</p>
+                <p><strong>Class:</strong> {qr.class}</p>
+                <p><strong>Expires In:</strong> {timeLeft}s</p>
               </div>
-
-              <img src={qrImage} alt="QR Code" />
+              <img src={qr.qrImage} alt="QR Code" />
             </>
           )}
 
-          {message && !qrImage && <p className="error">{message}</p>}
+          {qr?.message === "QR expired" && (
+            <p className="error">QR Expired for {qr.subject}</p>
+          )}
+
+          {message && !qr && <p className="error">{message}</p>}
         </div>
       </div>
     </>

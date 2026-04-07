@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import "./uploadTimetable.css";
 
 export default function UploadTimetable({ setRefreshQR }) {
   const [file, setFile] = useState(null);
@@ -26,7 +27,6 @@ export default function UploadTimetable({ setRefreshQR }) {
   };
 
   const handleUpload = async () => {
-
     if (!file) {
       alert("Please select a file first");
       return;
@@ -60,12 +60,11 @@ export default function UploadTimetable({ setRefreshQR }) {
 
         setRefreshQR((prev) => !prev);
 
-        setFile(null); // 🔥 reset file
+        setFile(null); // reset file
         document.querySelector("input[type=file]").value = "";
       } else {
         alert(data.error || "Upload failed");
       }
-
     } catch (err) {
       console.error(err);
       alert("Something went wrong");
@@ -96,11 +95,10 @@ export default function UploadTimetable({ setRefreshQR }) {
         alert(data.message);
         setUploadedFileName("");
         localStorage.removeItem("timetableFile");
-        setRefreshQR((prev) => !prev); // 🔥 refresh QR UI
+        setRefreshQR((prev) => !prev);
       } else {
         alert(data.error || "Delete failed");
       }
-
     } catch (err) {
       console.error(err);
       alert("Something went wrong");
@@ -110,31 +108,37 @@ export default function UploadTimetable({ setRefreshQR }) {
   };
 
   return (
-    <div>
-      <h2>Upload Timetable</h2>
+    <div className="upload-container">
+      <h2 className="upload-title">Upload Timetable</h2>
 
       <input
         type="file"
         onChange={(e) => setFile(e.target.files[0])}
+        className="upload-input"
       />
 
-      <br /><br />
+      <div className="upload-buttons">
+        <button
+          onClick={handleUpload}
+          disabled={loading}
+          className="upload-btn"
+        >
+          {loading ? "Uploading..." : "Upload"}
+        </button>
 
-      <button onClick={handleUpload} disabled={loading}>
-        {loading ? "Uploading..." : "Upload"}
-      </button>
+        <button
+          onClick={handleDelete}
+          disabled={loading}
+          className="delete-btn"
+        >
+          Remove Timetable
+        </button>
+      </div>
 
-      <button onClick={handleDelete} disabled={loading}>
-        Remove Timetable
-      </button>
       {uploadedFileName ? (
-        <p style={{ color: "green" }}>
-          Uploaded: {uploadedFileName}
-        </p>
+        <p className="file-info uploaded">Uploaded: {uploadedFileName}</p>
       ) : (
-        <p style={{ color: "gray" }}>
-          No file uploaded
-        </p>
+        <p className="file-info no-file">No file uploaded</p>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import StudentNavbar from "../components/StudentNavbar";
 import StudentCard from "../components/StudentCard";
+import Analytical from "../components/Analytical";
 import "./StudentDashboard.css";
 
 const StudentDashboard = () => {
@@ -18,41 +19,81 @@ const StudentDashboard = () => {
     todayAttend: 0,
   });
 
+  const [nextLecture, setNextLecture] = useState(null);
+  const [loadingLecture, setLoadingLecture] = useState(true);
 
-  const fetchAttendanceStats = async () => {
+  const fetchNextLecture = async () => {
     try {
       const token = localStorage.getItem("token");
+
       const res = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/student/attendance-stats`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${process.env.REACT_APP_API_URL}/api/student/next-lecture`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
-      const { totalLecturesToday, totalAttend, todayAttend, todaysSessions } = res.data;
-
-      setAttendanceStats({ totalLecturesToday, totalAttend, todayAttend });
-      setTodaySessions(Array.isArray(todaysSessions) ? todaysSessions : []);
+      setNextLecture(res.data.lecture);
     } catch (error) {
-      console.error("Error fetching attendance:", error);
-      alert("Failed to load attendance stats");
+      console.error("Error fetching next lecture:", error);
+      setNextLecture(null);
+    } finally {
+      setLoadingLecture(false);
     }
   };
 
-  // Recent Session 
+  const fetchTodaySessions = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/student/recent-session`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = res.data;
+
+      if (data.message === "No sessions today") {
+        setTodaySessions([]);
+        return;
+      }
+
+      setTodaySessions(data.sessions || []);
+      setAttendanceStats({
+        totalLecturesToday: data.totalLecturesToday || 0,
+        todayAttend: data.todayAttend || 0,
+      });
+
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+    }
+  };
+
+  // useEffect(() => {
+  //   fetchTodaySessions();
+
+  //   const interval = setInterval(fetchTodaySessions, 10000); // refresh every 10s
+
+  //   return () => clearInterval(interval);
+  // }, []);
 
   useEffect(() => {
-    fetchAttendanceStats();
+    fetchTodaySessions();
+    fetchNextLecture();
 
+    const interval = setInterval(() => {
+      fetchTodaySessions();
+      fetchNextLecture();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
-
-  
-
-
-  const todayPercentage =
-    attendanceStats.totalLecturesToday > 0
-      ? Math.round(
-        (attendanceStats.todayAttend / attendanceStats.totalLecturesToday) * 100
-      )
-      : 0;
 
   return (
     <>
@@ -61,25 +102,29 @@ const StudentDashboard = () => {
 
       <div className="dashboard-page">
 
-        {/* Attendance Stats Cards */}
         <div className="attendance-cards">
           <div className="stat-card">
-            <h3>Today's Lectures</h3>
-            <p>{attendanceStats.totalLecturesToday}</p>
+            <h3>Upcoming Lecture</h3>
+            <p>{loadingLecture ? "Loading..." : nextLecture?.subject || "No Lecture"}</p>
           </div>
+
           <div className="stat-card">
-            <h3>Total Attended</h3>
-            <p>{attendanceStats.totalAttend}</p>
+            <h3>Class</h3>
+            <p>{loadingLecture ? "Loading..." : nextLecture?.class || "-"}</p>
           </div>
+
           <div className="stat-card">
-            <h3>Not Attended</h3>
-            <p>{attendanceStats.totalLecturesToday - attendanceStats.todayAttend}</p>
+            <h3>Start Time</h3>
+            <p>{loadingLecture ? "Loading..." : nextLecture?.startTime || "-"}</p>
           </div>
+
           <div className="stat-card">
-            <h3>Today's Attendance %</h3>
-            <p>{todayPercentage}%</p>
+            <h3>Day</h3>
+            <p>{loadingLecture ? "Loading..." : nextLecture?.day || "-"}</p>
           </div>
         </div>
+
+
 
         {/* Today's Sessions Table */}
         {todaySessions.length > 0 && (
@@ -117,7 +162,10 @@ const StudentDashboard = () => {
         {todaySessions.length === 0 && (
           <p style={{ textAlign: "center", marginTop: "10px" }}>No sessions today</p>
         )}
+        <Analytical/>
       </div>
+        
+
     </>
   );
 };

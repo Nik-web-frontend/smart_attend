@@ -11,6 +11,8 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import StudentAttendance from "./pages/StudentAttendance";
 import Profile from "./pages/Profile";
 import UploadAutoQr from "./pages/UploadAutoQr";
+import UploadAttendance from "./components/UploadAttendance";
+import GraphPage from "./pages/GraphPage";
 
 function App() {
   return (
@@ -68,6 +70,34 @@ function App() {
             </ProtectedRoute>
           }
         />
+        
+         <Route
+          path="/upload-attendance"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <UploadAttendance />
+            </ProtectedRoute>
+          }
+        />
+
+         <Route
+          path="/attendance"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <ViewAttendance />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/report"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <GraphPage />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* Student Only */}
         <Route
@@ -78,7 +108,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/teacher/my-attendance" element={<ViewAttendance />} />
+        {/* <Route path="/teacher/my-attendance" element={<ViewAttendance />} /> */}
 
          <Route
           path="/student/attendance-history"
