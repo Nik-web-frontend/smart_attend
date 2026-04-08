@@ -21,11 +21,15 @@ export default function AutoQR({ refreshQR }) {
       const data = await res.json();
       setQr(data);
 
-      if (data.expiresAt) {
-        const diff = Math.floor(
-          (new Date(data.expiresAt) - new Date()) / 1000
-        );
-        setTimeLeft(diff > 0 ? diff : 0);
+      // if (data.expiresAt) {
+      //   const diff = Math.floor(
+      //     (new Date(data.expiresAt) - new Date()) / 1000
+      //   );
+      //   setTimeLeft(diff > 0 ? diff : 0);
+      // }
+
+      if (data.timeLeft !== undefined) {
+        setTimeLeft(data.timeLeft > 0 ? data.timeLeft : 0);
       }
 
       if (data.message === "QR expired") {

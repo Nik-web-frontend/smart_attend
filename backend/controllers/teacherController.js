@@ -223,16 +223,13 @@ exports.deleteTimetable = async (req, res) => {
 
 
 // Auto QR 
-
+// controllers/autoQRController.js
 exports.getAutoQR = async (req, res) => {
   try {
-    // ✅ Get correct IST time regardless of server timezone
+    // ✅ Current IST time
     const istTime = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
     const day = istTime.toLocaleString("en-US", { weekday: "long" });
     const currentTime = istTime.toTimeString().slice(0, 5);
-
-    console.log("Current Day:", day, "Current Time:", currentTime);
-    console.log("USER ROLE:", req.user.role, "ALLOWED ROLES:", ["teacher"]);
 
     // 1️⃣ Find current lecture
     const lecture = await Timetable.findOne({
@@ -242,29 +239,25 @@ exports.getAutoQR = async (req, res) => {
     });
 
     // 2️⃣ Find next lecture
-    // 2️⃣ Find next lecture (same day)
     let nextLecture = await Timetable.findOne({
       day,
       startTime: { $gt: currentTime },
     }).sort({ startTime: 1 });
 
-    // 🔥 If no lecture left today → find first lecture of next day
     if (!nextLecture) {
       const daysOrder = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
       const todayIndex = daysOrder.indexOf(day);
 
       for (let i = 1; i <= 7; i++) {
         const nextDay = daysOrder[(todayIndex + i) % 7];
-
-        const lecture = await Timetable.findOne({ day: nextDay }).sort({ startTime: 1 });
-
-        if (lecture) {
-          nextLecture = lecture;
+        const lectureNext = await Timetable.findOne({ day: nextDay }).sort({ startTime: 1 });
+        if (lectureNext) {
+          nextLecture = lectureNext;
           break;
         }
       }
     }
-    // 3️⃣ No lecture right now
+
     if (!lecture) {
       return res.json({
         message: "No lecture right now",
@@ -272,18 +265,23 @@ exports.getAutoQR = async (req, res) => {
       });
     }
 
-    // 4️⃣ Lecture start time
+    // 3️⃣ Correct lectureStart with day difference
+    const daysOrder = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const todayIndex = daysOrder.indexOf(day);
+    const lectureDayIndex = daysOrder.indexOf(lecture.day); // lecture's day
+
+    let dayDiff = lectureDayIndex - todayIndex;
+    if (dayDiff < 0) dayDiff += 7;
+
     const [hours, minutes] = lecture.startTime.split(":").map(Number);
     const lectureStart = new Date(istTime);
+    lectureStart.setDate(istTime.getDate() + dayDiff);
     lectureStart.setHours(hours, minutes, 0, 0);
 
-    // 5️⃣ QR expires 2 min from lecture start
-    // const expiresAt = new Date(lectureStart.getTime() + 2 * 60 * 1000);
-  
-  const expiresAt = new Date(lectureStart.getTime() + 1 * 60 * 1000);
+    // 4️⃣ QR expires 1 minute after lecture starts
+    const expiresAt = new Date(lectureStart.getTime() + 1 * 60 * 1000);
 
-
-    // 6️⃣ If QR already expired
+    // 5️⃣ If QR already expired
     if (istTime > expiresAt) {
       return res.json({
         message: "QR expired",
@@ -293,8 +291,7 @@ exports.getAutoQR = async (req, res) => {
       });
     }
 
-
-    // 8️⃣ Generate QR
+    // 6️⃣ Generate QR
     const qrPayload = {
       subject: lecture.subject,
       className: lecture.class,
@@ -303,8 +300,11 @@ exports.getAutoQR = async (req, res) => {
     const qrString = JSON.stringify(qrPayload);
     const qrImage = await QRCode.toDataURL(qrString);
 
-    // 9️⃣ Save QR to DB (include date field)
-    const today = istTime.toISOString().split("T")[0]; // YYYY-MM-DD
+    // 7️⃣ Calculate remaining seconds for frontend
+    const timeLeft = Math.floor((expiresAt - istTime) / 1000);
+
+    // 8️⃣ Save QR in DB
+    const today = istTime.toISOString().split("T")[0];
     await QR.create({
       teacher: req.user.id,
       subject: lecture.subject,
@@ -314,14 +314,12 @@ exports.getAutoQR = async (req, res) => {
       date: today,
     });
 
-    console.log("Lecture Start:", lectureStart, "QR Expires At:", expiresAt);
-
-    // 🔟 Send response
+    // 9️⃣ Send response with **timeLeft** instead of raw expiresAt
     res.json({
       subject: lecture.subject,
       class: lecture.class,
       qrImage,
-      expiresAt,
+      timeLeft,
       nextLecture,
     });
 
@@ -330,6 +328,7 @@ exports.getAutoQR = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 //Manual Attendance File Upload
 
