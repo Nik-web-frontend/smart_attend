@@ -278,7 +278,9 @@ exports.getAutoQR = async (req, res) => {
     lectureStart.setHours(hours, minutes, 0, 0);
 
     // 5️⃣ QR expires 2 min from lecture start
-    const expiresAt = new Date(lectureStart.getTime() + 2 * 60 * 1000);
+    // const expiresAt = new Date(lectureStart.getTime() + 2 * 60 * 1000);
+
+    const expiresAt = new Date(istTime.getTime() + 2 * 60 * 1000);
 
     // 6️⃣ If QR already expired
     if (istTime > expiresAt) {
@@ -290,7 +292,7 @@ exports.getAutoQR = async (req, res) => {
       });
     }
 
-  
+
     // 8️⃣ Generate QR
     const qrPayload = {
       subject: lecture.subject,
